@@ -1,0 +1,7 @@
+build/*
+Release/*
+Debug/*
+__pycache__
+.vscode/*
+.DS_Store
+*~
