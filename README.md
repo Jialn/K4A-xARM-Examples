@@ -27,7 +27,7 @@ xARM5 Gripping Example
 
 - Install other dependency
 
-  pip install opencv-python pynput
+  pip install opencv-python pynput pywin32
 
 ## Usage
 - Test Kinect marker detector

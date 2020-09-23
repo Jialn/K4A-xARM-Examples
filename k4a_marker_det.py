@@ -11,10 +11,10 @@ FRAME_HEIGHT = 576
 SERVER_EXE_FILE = r'k4a_pipe_server\pipe_streaming_example.exe'
 SERVER_PROCESS_NAME = 'pipe_streaming_example'
 # parameters for contours filter
-contours_area_range = [20, 900] # in num of pixel, 25 at 1.2m, 400 about 25cm
-z_range = [200, 1300]  # a bit larger than 25cm - 1.2m
+contours_area_range = [15, 1200] # in num of pixel, 25 at 1.2m, 400 about 25cm
+z_range = [150, 1300]  # a bit larger than 25cm - 1.2m
 z_center_offset = 700
-volume_factor_range = [4500, 15000] # mm^2 10*10mm - 20 *20 mm
+volume_factor_range = [3000, 12000] # z*sqrt(area), in mm*pixel_num depends on size of marker
 edge_margin = 10
 
 class K4aMarkerDet():
