@@ -15,9 +15,19 @@ xARM5 Gripping Example
 
   https://github.com/microsoft/Azure-Kinect-Sensor-SDK/blob/develop/docs/usage.md
 
-  There is no need to compile, just install the msi file
+  There is no need to compile, just to install
 
-- Install xArm-Python-SDK
+- Install pyk4a
+
+  ```
+  git clone https://github.com/etiennedub/pyk4a
+  cd pyk4a
+  pip install -e .
+  ```
+
+Make sure viewer_transformation.py in example of pyk4a works. You may need to run "pip install typing-extensions" if it throws an error.
+
+- Install xArm-Python-SDK (or DexARM SDK)
 
   ```
   git clone https://github.com/xArm-Developer/xArm-Python-SDK.git
@@ -27,7 +37,7 @@ xARM5 Gripping Example
 
 - Install other dependency
 
-  pip install opencv-python pynput pywin32
+  pip install opencv-python pynput pyserial
 
 ## Usage
 - Test Kinect marker detector

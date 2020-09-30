@@ -1,15 +1,11 @@
-import win32file
 import numpy as np
-import os, os.path
-import subprocess
-import time
 import cv2
+import pyk4a
+from pyk4a import Config, PyK4A
 
 # parameters 
 FRAME_WIDTH = 640  # The image size of depth/ir assuming depth_mode = K4A_DEPTH_MODE_NFOV_UNBINNED, change it otherwise
 FRAME_HEIGHT = 576
-SERVER_EXE_FILE = r'k4a_pipe_server\pipe_streaming_example.exe'
-SERVER_PROCESS_NAME = 'pipe_streaming_example'
 # parameters for contours filter
 contours_area_range = [15, 1200] # in num of pixel, 25 at 1.2m, 400 about 25cm
 z_range = [150, 1300]  # a bit larger than 25cm - 1.2m
@@ -18,7 +14,7 @@ volume_factor_range = [3000, 12000] # z*sqrt(area), in mm*pixel_num depends on s
 edge_margin = 10
 
 class K4aMarkerDet():
-    """ Class for Marker 3D pos detection using Azure Kinect
+    """ Class for tracking a passive Marker 3D position using Azure Kinect
     The marker should be made of retro-reflecting material, ~ 1*1 cm^2 size
     IR power of kinect should be dimmed
     """
@@ -26,40 +22,29 @@ class K4aMarkerDet():
     def __init__(self,
                  logging=False):
         """
+        Init the kinect.
+
         Args:
             logging (bool): log or not.
         """
         self._logging = logging
-        self._file_handle = self.init_k4a_pipe()
+        self._k4a = self.init_k4a()
 
-    def init_k4a_pipe(self):
-        """ Reset the agent. """
-        # Run server if server is not running
-        process_n=len(os.popen('tasklist | findstr '+SERVER_PROCESS_NAME).readlines())
-        if process_n < 1 :
-            run_cmd = SERVER_EXE_FILE
-            print('running command:' + run_cmd)
-            run_server = subprocess.Popen(run_cmd)
-            time.sleep(5)
-        # Create pipe client
-        fileHandle = win32file.CreateFile("\\\\.\\pipe\\mynamedpipe",
-            win32file.GENERIC_READ | win32file.GENERIC_WRITE,
-            0, None,
-            win32file.OPEN_EXISTING,
-            0, None)
-        return fileHandle
+    def init_k4a(self):
+        k4a = PyK4A(Config(color_resolution=pyk4a.ColorResolution.RES_720P, depth_mode=pyk4a.DepthMode.NFOV_UNBINNED,))
+        k4a.start()
+        return k4a
 
 
     def request_image(self):
-        # Send request to pipe server
-        request_msg = "Request depth image and ir image"
-        win32file.WriteFile(self._file_handle, request_msg.encode())
-        # Read reply data, need to be in same order/size as how you write them in the pipe server in pipe_streaming_example/main.cpp
-        depth_data = win32file.ReadFile(self._file_handle, FRAME_WIDTH * FRAME_HEIGHT * 2)
-        ab_data = win32file.ReadFile(self._file_handle, FRAME_WIDTH * FRAME_HEIGHT * 2)
+        capture = self._k4a.get_capture()
+        if capture.depth is not None:
+            cv2.imshow("Depth", colorize(capture.depth, (None, 5000)))
+        if capture.ir is not None:
+            cv2.imshow("IR", colorize(capture.ir, (None, 500), colormap=cv2.COLORMAP_JET))
         # Reshape to image
-        depth_img_full = np.frombuffer(depth_data[1], dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
-        ir_img_full = np.frombuffer(ab_data[1], dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
+        depth_img_full = np.frombuffer(capture.depth, dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
+        ir_img_full = np.frombuffer(capture.ir, dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
         # Type convert and threshold to ir
         depth_img = depth_img_full.astype(np.float32)  # in milimeter
         ir_img = np.array(ir_img_full // 64, np.uint8)
@@ -94,9 +79,10 @@ class K4aMarkerDet():
                             if volume_factor_range[0] < volume_factor < volume_factor_range[1] and z_range[0] < cz < z_range[1]:
                                 cxf -= FRAME_WIDTH / 2.0
                                 cyf -= FRAME_HEIGHT / 2.0
-                                result_i = cxf, cyf, cz-z_center_offset, area_i
+                                # translate x, y, z -> x, z, y (for most robot arms z is height, not depth)
+                                result_i = cxf, cz-z_center_offset, cyf, area_i
                                 if self._logging:
-                                    print("idx:" + str(marker_idx) + " xyz:" + str(result_i) + " area_i:" + str(area_i) + " vfactor:" + str(volume_factor))
+                                    print("idx:" + str(marker_idx) + " xyz:" + str(result_i) + " vfactor:" + str(volume_factor))
                                 marker_results.append(result_i)
                                 marker_contours.append(contours[marker_idx])
             if len(marker_results) > 0:
@@ -111,10 +97,8 @@ class K4aMarkerDet():
         return self.get_marker_from_img(ir_bin, depth_img)
         
 
-    def close(self, kill_server=True):
-        if kill_server:
-            os.system('TASKKILL /F /IM ' + SERVER_PROCESS_NAME + '.exe')  # kill server process
-            win32file.CloseHandle(self._file_handle)
+    def close(self):
+        self._k4a.stop()
 
 
 # test for k4a marker detection
@@ -127,8 +111,5 @@ if __name__ == "__main__":
         key = cv2.waitKey(2)
         if key == 27: # Esc key to stop
             k4a_marker_det.close()
-            break
-        if key == ord('q'): # q key to exit without kill server process
-            k4a_marker_det.close(kill_server=False)
             break
 

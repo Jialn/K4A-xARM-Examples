@@ -12,7 +12,7 @@ class ArmWrapper():
         pass
 
     def go_home(self):
-        pass
+        pass 
 
     def set_pos(self, x, y, z):
         pass
@@ -44,8 +44,9 @@ class DexArmWrapper(ArmWrapper):
         Args:
             logging (bool): log or not.
         """
-        self._arm = Dexarm("COM67")
+        self._arm = Dexarm("/dev/ttyACM0") # COM* in Windows, /dev/tty* in Ubuntu
         self._logging = logging
+        self.setup()
 
     def setup(self):
         self._arm.go_home()
@@ -53,22 +54,26 @@ class DexArmWrapper(ArmWrapper):
     def go_home(self):
         self._arm.go_home()
 
-    def set_pos(self, x, y, z):
-        self._arm.move_to(x,y,z)
+    def set_pos(self, x=None, y=None, z=None):
+        self._arm.move_to(-x,y+300,z, wait=False)
 
     def get_pos(self):
         pos = self._arm.get_current_position()
-        return pos
+        return pos[:3]
 
     def set_gripper(self, open_pos):
-        pass
+        if 0.3 < open_pos <= 0.5:
+            self._arm.soft_gripper_pick()
+        elif 0.7 <= open_pos < 0.9:
+            self._arm.soft_gripper_place()
+        else:
+            self._arm.soft_gripper_nature()
 
     def reset(self, wait=True):
         self._arm.go_home()
 
     def close(self):
-        self._arm.reset()
-        self._arm.disconnect()
+        self._arm.close()
 
 
 class xArm5Wrapper(ArmWrapper):
