@@ -57,10 +57,26 @@ if __name__ == "__main__":
 
     def on_release(key):
         global exiting_flag
+        move_step_keybo = 20
         print('{0} release'.format(key))
         if isinstance(key, KeyCode):
             if key.char == 'q':
                 exiting_flag = 2
+            else:
+                pos = arm.get_pos()
+                if pos[0] is not None:
+                    if key.char == 'e':
+                        arm.set_pos(z = pos[2] + move_step_keybo)
+                    if key.char == 'f':
+                        arm.set_pos(z = pos[2] - move_step_keybo)
+                    if key.char == 'a':
+                        arm.set_pos(x = pos[0] - move_step_keybo)
+                    if key.char == 'd':
+                        arm.set_pos(x = pos[0] + move_step_keybo)
+                    if key.char == 'w':
+                        arm.set_pos(y = pos[1] - move_step_keybo)
+                    if key.char == 's':
+                        arm.set_pos(y = pos[1] + move_step_keybo)
         # if key is a special key
         if isinstance(key, Key):
             if key == Key.esc:
