@@ -50,4 +50,4 @@ Make sure viewer_transformation.py in example of pyk4a works. You may need to ru
 
 - Run the gripping demostration
    
-  python .\gripping_demo_3d_perception.py
+  python .\gripping_demo.py

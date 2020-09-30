@@ -4,7 +4,7 @@ from pydexarm import Dexarm
 class ArmWrapper():
     """ Base Class for Arm
     """
-    
+
     def __init__(self):
         self.init_offset = [0, 0 ,0]
         pass
@@ -56,10 +56,10 @@ class DexArmWrapper(ArmWrapper):
     def go_home(self):
         self._arm.go_home()
 
-    def set_pos(self, x=None, y=None, z=None):
+    def set_pos(self, x=None, y=None, z=None, wait=False):
         if x is not None: x = - x
         if y is not None: y = y + 300
-        self._arm.move_to(x,y,z, wait=False)
+        self._arm.move_to(x,y,z, wait=False, feedrate=2000)
 
     def get_pos(self):
         pos = list(self._arm.get_current_position())

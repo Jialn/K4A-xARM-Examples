@@ -1,6 +1,7 @@
 import os
 import time
 import cv2
+import numpy as np
 from pynput.mouse import Button
 from pynput.mouse import Listener as mListener
 from pynput.keyboard import Key, KeyCode
@@ -11,7 +12,6 @@ from arm_wrapper import DexArmWrapper, xArm5Wrapper
 if __name__ == "__main__":
     exiting_flag = 0
     enable_k4a = False
-    kill_server = True
     arm = None
     arm_init_pos = None
     pos_control_flag = 0  # 0 disable; 1 use mouse; 2 use kinect, mid key to switch 
@@ -100,20 +100,17 @@ if __name__ == "__main__":
             ir_bin, depth_img = marker_detector.request_image()
             marker_pos = marker_detector.get_marker_from_img(ir_bin, depth_img)
             if pos_control_flag == 2 and len(marker_pos) >= 1:
-                x, y, z = arm_init_pos[0] + marker_pos[0][0], arm_init_pos[1] + marker_pos[0][1], arm_init_pos[2] + marker_pos[0][2]
+                x, y, z = marker_pos[0][0], marker_pos[0][2], marker_pos[0][1]
                 arm.set_pos(x=x, y=y, z=z)
             if enable_k4a_gripper_control and len(marker_pos) == 2:
                 distance = np.linalg.norm(np.array(marker_pos[1][:2])-np.array(marker_pos[0][:2]))
                 arm.set_gripper(distance/100.0) # normalized to 100mm, i.e., 10cm
         time.sleep(0.01)
         # cv2.imshow("gray_bin", ir_bin)
-        if exiting_flag == 1: # Esc key to stop
-            break
-        if exiting_flag == 2: # q key to exit without kill server process
-            kill_server = False
+        if exiting_flag == 1: # Esc or Q key to stop
             break
 
     arm.close()
-    if enable_k4a: marker_detector.close(kill_server=kill_server)
+    if enable_k4a: marker_detector.close()
     listener_m.stop()
     listener_k.stop()

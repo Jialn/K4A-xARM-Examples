@@ -38,10 +38,6 @@ class K4aMarkerDet():
 
     def request_image(self):
         capture = self._k4a.get_capture()
-        if capture.depth is not None:
-            cv2.imshow("Depth", colorize(capture.depth, (None, 5000)))
-        if capture.ir is not None:
-            cv2.imshow("IR", colorize(capture.ir, (None, 500), colormap=cv2.COLORMAP_JET))
         # Reshape to image
         depth_img_full = np.frombuffer(capture.depth, dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
         ir_img_full = np.frombuffer(capture.ir, dtype=np.uint16).reshape(FRAME_HEIGHT, FRAME_WIDTH).copy()
@@ -79,8 +75,7 @@ class K4aMarkerDet():
                             if volume_factor_range[0] < volume_factor < volume_factor_range[1] and z_range[0] < cz < z_range[1]:
                                 cxf -= FRAME_WIDTH / 2.0
                                 cyf -= FRAME_HEIGHT / 2.0
-                                # translate x, y, z -> x, z, y (for most robot arms z is height, not depth)
-                                result_i = cxf, cz-z_center_offset, cyf, area_i
+                                result_i = cxf, cyf, cz-z_center_offset, area_i
                                 if self._logging:
                                     print("idx:" + str(marker_idx) + " xyz:" + str(result_i) + " vfactor:" + str(volume_factor))
                                 marker_results.append(result_i)
